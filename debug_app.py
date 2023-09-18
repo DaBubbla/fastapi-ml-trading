@@ -9,6 +9,7 @@ with open("./ci/version") as version_file:
     build_version = version_file.read().strip("\n")
 
 os.environ["build_version"] = build_version
+os.environ["run_local"] = "true"
 
 from src.main.application import app
 

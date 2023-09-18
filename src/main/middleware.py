@@ -7,9 +7,9 @@ import os
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from src.main.framework.metrics_utils import (
-    CustomFrontendMetricsCollector, update_user_source_in_metrics
-)
+# from src.main.framework.metrics_utils import (
+#     CustomFrontendMetricsCollector, update_user_source_in_metrics
+# )
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # from src.main.request_validation import _get_auth_token

@@ -4,19 +4,18 @@ Routes for both REST and GraphQL.
 import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
 
 from src.main.exception_handling import exception_handler
-from src.main.framework.exceptions import app_excep
+from src.main.framework.config_manager import APP_CONFIG
+from src.main.framework.exceptions import app_except
+from src.main.framework.session_handler import SessionHandler
 
-from src.main.framework.models import PortInEligibility, XMEligibility
-from src.main.graphql_api.graphql import GRAPHQL_APP
+# from src.main.framework.models import PortInEligibility, XMEligibility
+# from src.main.graphql_api.graphql import GRAPHQL_APP
 
 from src.main.middleware import RequestMiddleware
 
-# from src.main.request_validation import validate_request
-# TODO: add handler functions
-from src.main.rest_api.handler import get_eligibility, get_device
+from src.main.rest_api.handler import call_api
 
 
 app = FastAPI(
@@ -37,9 +36,9 @@ app.add_middleware(
 app.add_exception_handler(Exception, exception_handler)
 
 
-# @app.on_event("startup")
-# async def startup_tasks():
-    # app.state.config = APP_CONFIG.get_configs()
+@app.on_event("startup")
+async def startup_tasks():
+    app.state.config = APP_CONFIG.get_configs()
     # app.state.auth_builder = AuthBuilder(
     #     app.state.config).create_auth_clients()
     # app.state.localization_session = LocalizationSession(app.state.config)
@@ -61,40 +60,39 @@ async def get_health():
     }
 
 
-@app.route("/graphql", methods=["GET", "POST"])
-async def byod_graphql(request: Request):
-    '''
-    GraphQL endpoint.
-    '''
-    # org_logger.info('GraphQL request started...')
-    response = await GRAPHQL_APP._handle_http_request(request)
-    return response
+# @app.route("/graphql", methods=["GET", "POST"])
+# async def byod_graphql(request: Request):
+#     '''
+#     GraphQL endpoint.
+#     '''
+#     # org_logger.info('GraphQL request started...')
+#     response = await GRAPHQL_APP._handle_http_request(request)
+#     return response
 
 # TODO: change path
-@app.get("/byod/{imei}", responses=app_excep)
-async def get_byod(imei: str, request: Request) -> XMEligibility:
-    # req_body = validate_request(request)
-    # session_handler = SessionHandler(
-    #     app.state.config,
-    #     req_body=req_body,
-    #     app=APP,
-    #     auth_builder=app.state.auth_builder,
-    #     imei=imei
-    # )
-    response = await get_device(request)
+# @app.get("/byod/{imei}", responses=app_except)
+# async def get_byod(imei: str, request: Request) -> XMEligibility:
+#     # req_body = validate_request(request)
+#     # session_handler = SessionHandler(
+#     #     app.state.config,
+#     #     req_body=req_body,
+#     #     app=APP,
+#     #     auth_builder=app.state.auth_builder,
+#     #     imei=imei
+#     # )
+#     response = await get_device(request)
 
-    return response
+#     return response
 
 # TODO: change path
-@app.get("/port-in-eligibility/{phoneNumber}", responses=app_excep)
-async def pie_get(phoneNumber: str, request: Request) -> PortInEligibility:
+# @app.get("/port-in-eligibility/{phoneNumber}", responses=app_except)
+@app.get("/API", responses=app_except)
+def pie_get(request: Request): # -> PortInEligibility:
     # req_body = validate_request(request)
-    # session_handler = SessionHandler(
-    #     app.state.config,
-    #     req_body=req_body,
-    #     app=APP,
-    #     auth_builder=app.state.auth_builder,
-    #     phone_number=phoneNumber
-    # )
-    response = await get_eligibility(request)
+    session_handler = SessionHandler(
+        app.state.config,
+        req_body=request,
+        app=app,
+    )
+    response = call_api(session_handler)
     return response

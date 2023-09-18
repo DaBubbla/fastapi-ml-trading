@@ -20,9 +20,9 @@ async def exception_handler(request: Request, exp: Exception) -> JSONResponse:
     """
     if isinstance(exp, AppException):
         return JSONResponse(
-            status_code=exp.status_code,
+            status_code=exp.statusCode,
             content={
-                'errorCode': exp.error_code,
+                'errorCode': exp.errorCode,
                 'errorMessage': exp.message,
                 'severity': exp.severity
             }
@@ -62,7 +62,7 @@ async def exception_handler(request: Request, exp: Exception) -> JSONResponse:
     return JSONResponse(
         status_code=500,
         content={
-            'errorCode': 'XCP500.UNKNOWN',
+            'errorCode': 'k8500.UNKNOWN',
             'errorMessage': message,
             'severity': 'ERROR'
         }

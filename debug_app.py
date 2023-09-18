@@ -2,6 +2,7 @@ import uvicorn
 import os
 
 os.environ["PYTHONASYNCIODEBUG"] = "1"
+os.environ ["PYTHONDONTWRITEBYTECODE"]="1"
 
 build_version = "0.0.0"
 

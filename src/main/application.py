@@ -95,4 +95,4 @@ def pie_get(request: Request): # -> PortInEligibility:
         app=app,
     )
     response = call_api(session_handler)
-    return response
+    return response.get("value") or response

@@ -43,3 +43,11 @@ def call_api(session_handler):
     except requests.exceptions.RequestException as e:
         raise RequestBodyException
 
+def prediction_handler(session_handler):
+    query_params = session_handler.req_body.query_params.dict()
+    symbol = query_params.get("symbol", "")
+    start_date = query_params.get("start_date", "")
+    end_date = session_handler.req_body.query_params.calculate_end_date
+
+
+    print(session_handler)

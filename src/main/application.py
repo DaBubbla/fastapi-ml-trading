@@ -14,8 +14,9 @@ from src.main.framework.session_handler import SessionHandler
 # from src.main.graphql_api.graphql import GRAPHQL_APP
 
 from src.main.middleware import RequestMiddleware
+from src.main.request_validation import validate_request
 
-from src.main.rest_api.handler import call_api
+from src.main.rest_api.handler import call_api, prediction_handler
 
 
 app = FastAPI(
@@ -86,7 +87,7 @@ async def get_health():
 
 # TODO: change path
 # @app.get("/port-in-eligibility/{phoneNumber}", responses=app_except)
-@app.get("/API", responses=app_except)
+@app.get("/jokes", responses=app_except)
 def pie_get(request: Request): # -> PortInEligibility:
     # req_body = validate_request(request)
     session_handler = SessionHandler(
@@ -96,3 +97,25 @@ def pie_get(request: Request): # -> PortInEligibility:
     )
     response = call_api(session_handler)
     return response.get("value") or response
+
+
+@app.get("/predict")
+async def predict_stock_price(
+    request: Request,
+    # data: StockDataInput
+):
+    # ticker_symbol = data.ticker_symbol
+    # start_date = data.start_date
+    # end_date = data.end_date
+
+    req_body = validate_request(request)
+
+    session_handler = SessionHandler(
+        app.state.config,
+        req_body=req_body,
+        app=app,
+    )
+    x = prediction_handler(session_handler)
+
+
+    

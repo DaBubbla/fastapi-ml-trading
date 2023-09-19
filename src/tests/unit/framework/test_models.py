@@ -1,3 +1,6 @@
+'''
+Unit tests of the models.py file.
+'''
 import pytest
 from datetime import datetime
 from src.main.framework.models import QueryParams, RequestModel  # Replace 'your_module' with the actual module name where your models are defined

@@ -7,4 +7,4 @@ else
     pip install pytest pytest-cov
 fi
 
-pytest --cov-config=pytest.cfg --cov=. --cov-report=term-missing
+pytest --cov-config=pytest.ini --cov=. --cov-report=term-missing

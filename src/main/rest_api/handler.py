@@ -8,6 +8,7 @@ import requests
 from src.main.framework.exceptions import (
     RequestBodyException, DownstreamException
 )
+from src.main.rest_api.helpers import assemble_data
 
 
 
@@ -56,8 +57,6 @@ def call_api(session_handler):
 
 def prediction_handler(session_handler):
 
-    call_api(session_handler=session_handler)
+    response = call_api(session_handler=session_handler)
 
-    # assemble_data()
-
-    print(session_handler)
+    assemble_data(response)

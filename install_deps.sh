@@ -39,7 +39,7 @@ function main()
       'pytest-asyncio'
       'pytest-cov'
       'pytest-html'
-      'pylint',
+      'pylint'
       'httpx'
     )
     local use_virtualenv=true

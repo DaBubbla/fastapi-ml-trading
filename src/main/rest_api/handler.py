@@ -11,7 +11,7 @@ from src.main.framework.exceptions import (
 
 
 
-def get_response(session_handler={}, url=""):
+def get_response(session_handler={}, url="", params=""):
     """
     Calls the API and returns the response.
     Params:
@@ -20,12 +20,12 @@ def get_response(session_handler={}, url=""):
     Returns:
         JSON: The JSON response.
     """
-    response = requests.get(url)
+
+    response = requests.get(url, params=params)
 
     if response.status_code != 200:
         raise DownstreamException
     return response
-
 
 
 def call_api(session_handler):
@@ -37,17 +37,27 @@ def call_api(session_handler):
         JSON: The JSON response.
     """
     try:
-        url = session_handler.config.get("url", "")
-        response = get_response(session_handler=session_handler, url=url)
+        url = session_handler.config.ge("alphavantage_url", "")
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": session_handler.req_body.query_params.symbol,
+            "outputsize": "full",  # for now full will return all data compact will return recent 100
+            "apikey": session_handler.config.get("alphavantage_api_key"),
+            "datatype": "csv"
+        }
+
+        response = get_response(
+            session_handler=session_handler, url=url, params=params
+        )
         return response.json()
     except requests.exceptions.RequestException as e:
         raise RequestBodyException
 
-def prediction_handler(session_handler):
-    query_params = session_handler.req_body.query_params.dict()
-    symbol = query_params.get("symbol", "")
-    start_date = query_params.get("start_date", "")
-    end_date = session_handler.req_body.query_params.calculate_end_date
 
+def prediction_handler(session_handler):
+
+    call_api(session_handler=session_handler)
+
+    # assemble_data()
 
     print(session_handler)

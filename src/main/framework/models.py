@@ -3,7 +3,6 @@ from pydantic import BaseModel, Field, validator
 from datetime import datetime, timedelta
 
 
-
 class QueryParams(BaseModel):
     symbol: str
     start_date: str = None
@@ -18,9 +17,10 @@ class QueryParams(BaseModel):
             return datetime.today().strftime("%m-%d-%Y")
 
         start_date = datetime.strptime(self.start_date, "%m-%d-%Y")
-        end_date = start_date + timedelta(days=10) # * cycle_duration) # Adjust cycle duration as needed
+        # * cycle_duration) # Adjust cycle duration as needed
+        end_date = start_date + timedelta(days=10)
         return end_date.strftime("%m-%d-%Y")
-    
+
     @validator("symbol", pre=True, always=True)
     def uppercase_symbol(cls, value):
         if value is not None:
@@ -30,4 +30,3 @@ class QueryParams(BaseModel):
 class RequestModel(BaseModel):
     query_params: QueryParams = None
     trackingId: str = Field(..., description="Tracking ID is required.")
-    

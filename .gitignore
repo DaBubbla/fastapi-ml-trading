@@ -10,6 +10,10 @@
 # C extensions
 *.so
 
+# jupyter
+*.ipynb
+.ipynb_checkpoints
+
 # Distribution / packaging
 .Python
 build/

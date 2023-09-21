@@ -14,12 +14,12 @@ class QueryParams(BaseModel):
         (10 total cycles)
         """
         if not self.start_date:
-            return datetime.today().strftime("%m-%d-%Y")
+            return datetime.today().strftime("%Y-%m-%d")
 
-        start_date = datetime.strptime(self.start_date, "%m-%d-%Y")
+        start_date = datetime.strptime(self.start_date, "%Y-%m-%d")
         # * cycle_duration) # Adjust cycle duration as needed
         end_date = start_date + timedelta(days=10)
-        return end_date.strftime("%m-%d-%Y")
+        return end_date.strftime("%Y-%m-%d")
 
     @validator("symbol", pre=True, always=True)
     def uppercase_symbol(cls, value):

@@ -58,12 +58,12 @@ class ConfigManagerFactory:
         #         region_name=self.region
         #     )
         # )
-        cfg_mgr = {}
+        # cfg_mgr = {}
 
-        if self.run_local:
-            return LocalConfigManager(self.stage)
+        # if self.run_local:
+        return LocalConfigManager(self.stage)
     
-        return cfg_mgr  
+        # return cfg_mgr  
     
 APP_CONFIG = ConfigManagerFactory()()
 

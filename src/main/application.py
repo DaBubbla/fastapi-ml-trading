@@ -115,7 +115,6 @@ async def predict_stock_price(
         req_body=req_body,
         app=app,
     )
-    x = prediction_handler(session_handler)
-
-
+    demark_data = prediction_handler(session_handler)
+    return demark_data
     

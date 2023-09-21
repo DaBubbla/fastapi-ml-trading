@@ -1,3 +1,4 @@
+import os
 from fastapi.testclient import TestClient
 from src.main.application import app
 
@@ -12,7 +13,7 @@ def test_get_health():
         "version": "0.0.0"
     }
 
-def test_predict_stock_price(mock_app_config):
+def test_predict_stock_price(mock_app_config, mock_app):
     # You can write similar tests for the /predict endpoint
     query_params = {
         "symbol": "AAPL",

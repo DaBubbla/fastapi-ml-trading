@@ -1,6 +1,7 @@
 """
 Main handler for API requests.
 """
+import json
 import os
 
 import requests
@@ -38,7 +39,7 @@ def call_api(session_handler):
         JSON: The JSON response.
     """
     try:
-        url = session_handler.config.ge("alphavantage_url", "")
+        url = session_handler.config.get("alphavantage_url", "")
         params = {
             "function": "TIME_SERIES_DAILY",
             "symbol": session_handler.req_body.query_params.symbol,
@@ -50,13 +51,23 @@ def call_api(session_handler):
         response = get_response(
             session_handler=session_handler, url=url, params=params
         )
-        return response.json()
+        return response
     except requests.exceptions.RequestException as e:
         raise RequestBodyException
 
+def panda_to_json(data):
+    data_frame = data.to_json(orient="records")
+    json_data = json.loads(data_frame)
+    return json_data
 
 def prediction_handler(session_handler):
 
     response = call_api(session_handler=session_handler)
 
-    assemble_data(response)
+    query_params = session_handler.req_body.query_params
+
+    demark_data = assemble_data(query_params, response)
+    demark_json = panda_to_json(demark_data)
+
+    return demark_json
+    

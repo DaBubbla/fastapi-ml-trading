@@ -9,6 +9,8 @@ import requests
 from src.main.framework.exceptions import (
     RequestBodyException, DownstreamException
 )
+from src.main.framework.ml_models import rm_regressor
+from src.main.framework.models import ResponseModel
 from src.main.rest_api.helpers import assemble_data
 
 
@@ -60,14 +62,26 @@ def panda_to_json(data):
     json_data = json.loads(data_frame)
     return json_data
 
+
+def numpy_to_json(data):
+    data_frame = data
+    json_data = json.dumps(data_frame)
+    return json_data
+
+
 def prediction_handler(session_handler):
 
     response = call_api(session_handler=session_handler)
 
     query_params = session_handler.req_body.query_params
 
-    demark_data = assemble_data(query_params, response)
-    demark_json = panda_to_json(demark_data)
+    assembled_data, ml_data = assemble_data(query_params, response)
 
-    return demark_json
+    predicted_close = rm_regressor(ml_data)[0]
+
+    response = {
+        "predicted_close": numpy_to_json(predicted_close),
+        "demark_data": panda_to_json(assembled_data)
+    }
+    return ResponseModel(**response)
     

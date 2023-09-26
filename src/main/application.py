@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.main.exception_handling import exception_handler
 from src.main.framework.config_manager import APP_CONFIG
 from src.main.framework.exceptions import app_except
+from src.main.framework.models import ResponseModel
 from src.main.framework.session_handler import SessionHandler
 
 # from src.main.framework.models import PortInEligibility, XMEligibility
@@ -102,7 +103,6 @@ def pie_get(request: Request): # -> PortInEligibility:
 @app.get("/predict")
 async def predict_stock_price(
     request: Request,
-    # data: StockDataInput
 ):
     # ticker_symbol = data.ticker_symbol
     # start_date = data.start_date
@@ -115,6 +115,6 @@ async def predict_stock_price(
         req_body=req_body,
         app=app,
     )
-    demark_data = prediction_handler(session_handler)
-    return demark_data
+    response = prediction_handler(session_handler)
+    return response.model_dump()
     

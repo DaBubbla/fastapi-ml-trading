@@ -4,17 +4,17 @@ import numpy as np
 
 
 def assemble_data(query_params, response):
-    data = pd.read_csv(io.StringIO(response.text))
+    data = pd.read_csv(io.StringIO(response.text), index_col=False)
 
     start_date = query_params.start_date
     end_date = query_params.calculate_end_date
 
     filtered_data = data[(data["timestamp"] >= start_date) & (data["timestamp"] <= end_date)]
-    filtered_data = filtered_data.sort_values(by="timestamp", ascending=True).head(10)
+    filtered_data = filtered_data.sort_values(by="timestamp", ascending=True)
     
 
-    demark_added = calculate_demarker(filtered_data)
-    return demark_added
+    demark_added = calculate_demarker(filtered_data.head(10))
+    return demark_added, data.sort_values(by="timestamp", ascending=True)
 
 
 def calculate_demarker(data):

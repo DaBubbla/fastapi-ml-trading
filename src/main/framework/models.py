@@ -44,6 +44,11 @@ class DemarkData(BaseModel):
     setup: float
     countdown: float
 
+class PredicteCloseSummary(BaseModel):
+    min_close: float = 0.0
+    mean_close: float = 0.0
+    max_close: float = 0.0
+
 class ResponseModel(BaseModel):
-    predicted_close: float = 0
+    predicted_close_summary: PredicteCloseSummary = None
     demark_data: List[DemarkData] = []

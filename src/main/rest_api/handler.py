@@ -9,9 +9,9 @@ import requests
 from src.main.framework.exceptions import (
     RequestBodyException, DownstreamException
 )
-from src.main.framework.ml_models import rm_regressor
+from src.main.framework.ml_models import StockPricePredictor
 from src.main.framework.models import ResponseModel
-from src.main.rest_api.helpers import assemble_data
+from src.main.rest_api.helpers import assemble_data, get_last_10_data_points
 
 
 
@@ -63,25 +63,36 @@ def panda_to_json(data):
     return json_data
 
 
-def numpy_to_json(data):
-    data_frame = data
-    json_data = json.dumps(data_frame)
-    return json_data
+def numpy_to_list(data):
+    return data.tolist()  # Convert the numpy array to a Python list
+
+
+def get_closing_summary(predicted_close):
+    return {
+        "min_close": round(min(predicted_close), 2),
+        "mean_close": round(sum(predicted_close) / len(predicted_close), 2),
+        "max_close": round(max(predicted_close), 2),
+    }
 
 
 def prediction_handler(session_handler):
-
     response = call_api(session_handler=session_handler)
+    assembled_data, ml_data = assemble_data(response)
 
-    query_params = session_handler.req_body.query_params
+    # Create a StockPricePredictor instance and train the model
+    stock_predictor = StockPricePredictor(ml_data)
+    X_train, X_test, y_train, y_test = stock_predictor.split_data()
+    trained_model = stock_predictor.train_model(X_train, y_train)
 
-    assembled_data, ml_data = assemble_data(query_params, response)
+    # Extract the last 10 data points for prediction (sample_data)
+    sample_data = get_last_10_data_points(ml_data)
 
-    predicted_close = rm_regressor(ml_data)[0]
+    # Make predictions using the trained model
+    predicted_close = stock_predictor.predict(trained_model, sample_data)
+
 
     response = {
-        "predicted_close": numpy_to_json(predicted_close),
+        "predicted_close_summary": get_closing_summary(numpy_to_list(predicted_close)),
         "demark_data": panda_to_json(assembled_data)
     }
     return ResponseModel(**response)
-    

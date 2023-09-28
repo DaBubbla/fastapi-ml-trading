@@ -3,18 +3,16 @@ import pandas as pd
 import numpy as np
 
 
-def assemble_data(query_params, response):
+def assemble_data(response):
     data = pd.read_csv(io.StringIO(response.text), index_col=False)
 
-    start_date = query_params.start_date
-    end_date = query_params.calculate_end_date
+    # Sort the entire dataset in ascending order by timestamp
+    data = data.sort_values(by="timestamp", ascending=True)
 
-    filtered_data = data[(data["timestamp"] >= start_date) & (data["timestamp"] <= end_date)]
-    filtered_data = filtered_data.sort_values(by="timestamp", ascending=True)
-    
+    # Calculate DeMark indicators for the entire sorted dataset
+    demark_added = calculate_demarker(data)
 
-    demark_added = calculate_demarker(filtered_data.head(10))
-    return demark_added, data.sort_values(by="timestamp", ascending=True)
+    return demark_added, data
 
 
 def calculate_demarker(data):
@@ -36,3 +34,12 @@ def calculate_demarker(data):
             data['countdown'].iloc[i] = 0
 
     return data
+
+def get_last_10_data_points(data):
+    # Get the last 10 data points
+    last_10_data_points = data.tail(10)
+
+    # Drop any rows with missing values (NaN)
+    last_10_data_points = last_10_data_points.dropna()
+
+    return last_10_data_points

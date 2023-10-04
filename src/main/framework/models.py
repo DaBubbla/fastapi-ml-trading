@@ -1,5 +1,7 @@
-from pydantic import BaseModel, Field, validator
-
+from pydantic import (
+    BaseModel, Field, validator
+)
+from typing import List
 from datetime import datetime, timedelta
 
 
@@ -30,3 +32,23 @@ class QueryParams(BaseModel):
 class RequestModel(BaseModel):
     query_params: QueryParams = None
     trackingId: str = Field(..., description="Tracking ID is required.")
+
+
+class DemarkData(BaseModel):
+    timestamp: str
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int
+    setup: float
+    countdown: float
+
+class PredicteCloseSummary(BaseModel):
+    min_close: float = 0.0
+    mean_close: float = 0.0
+    max_close: float = 0.0
+
+class ResponseModel(BaseModel):
+    predicted_close_summary: PredicteCloseSummary = None
+    demark_data: List[DemarkData] = []

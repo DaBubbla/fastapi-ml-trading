@@ -1,4 +1,5 @@
 fastapi
-requests
 pandas
+requests
+scikit-learn
 uvicorn

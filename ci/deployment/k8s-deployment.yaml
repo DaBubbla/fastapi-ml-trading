@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prediction-app-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: prediction-app
+  template:
+    metadata:
+      labels:
+        app: prediction-app
+    spec:
+      containers:
+      - name: prediction-app
+        image: your-docker-image:tag
+        ports:
+        - containerPort: 80

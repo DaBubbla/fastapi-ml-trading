@@ -17,13 +17,13 @@ COPY requirements.txt /app/requirements.txt
 
 WORKDIR /app
 
-
 # RUN chmod +x scripts/fluent.sh
 RUN chmod +x bootstrap.sh
 RUN chmod +x start.sh
 # RUN scripts/fluent.sh
-RUN /app/bootstrap.sh
+RUN ./bootstrap.sh
 
-CMD ["./start.sh"]
+# CMD ["./start.sh"]
+CMD ["ls -la"]
 
 EXPOSE 80

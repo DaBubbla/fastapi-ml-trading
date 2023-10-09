@@ -50,5 +50,6 @@ class PredicteCloseSummary(BaseModel):
     max_close: float = 0.0
 
 class ResponseModel(BaseModel):
-    predicted_close_summary: PredicteCloseSummary = None
+    predicted_close_rf: PredicteCloseSummary = None
+    predicted_close_lr: PredicteCloseSummary = None
     demark_data: List[DemarkData] = []

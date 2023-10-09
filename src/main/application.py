@@ -74,6 +74,6 @@ async def predict_stock_price(
         req_body=req_body,
         app=app,
     )
-    response = prediction_handler(session_handler)
-    return response.model_dump()
+    response = await prediction_handler(session_handler)
+    return response
     

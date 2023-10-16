@@ -11,10 +11,10 @@ from src.main.framework.exceptions import (
 )
 from src.main.framework.ml_models import StockPricePredictor
 from src.main.framework.models import ResponseModel
-from src.main.rest_api.helpers import assemble_data, get_last_10_data_points
+from src.main.rest_api.helpers import assemble_data
 
 
-def get_response(session_handler={}, url="", params=""):
+def get_response(url="", params=""):
     """
     Calls the API and returns the response.
     Params:
@@ -48,10 +48,15 @@ def call_api(session_handler):
             "apikey": session_handler.config.get("alphavantage_api_key"),
             "datatype": "csv"
         }
+        # params = {
+        #     "function": "TIME_SERIES_INTRADAY",
+        #     "symbol": session_handler.req_body.query_params.symbol,
+        #     "interval": "15min",  # for now full will return all data compact will return recent 100
+        #     "apikey": session_handler.config.get("alphavantage_api_key"),
+        #     "datatype": "csv"
+        # }
 
-        response = get_response(
-            session_handler=session_handler, url=url, params=params
-        )
+        response = get_response(url=url, params=params)
         return response
     except requests.exceptions.RequestException as e:
         raise RequestBodyException
@@ -64,8 +69,7 @@ def panda_to_json(data):
 
 
 def numpy_to_list(data):
-    return data.tolist()  # Convert the numpy array to a Python list
-
+    return data.tolist()
 
 def get_closing_summary(predicted_close):
     return {
@@ -74,30 +78,30 @@ def get_closing_summary(predicted_close):
         "max_close": round(max(predicted_close), 2),
     }
 
-
 async def prediction_handler(session_handler):
     response = call_api(session_handler=session_handler)
-    assembled_data, ml_data = assemble_data(response)
+    assembled_data = assemble_data(response)
 
-    # Create a StockPricePredictor instance
-    stock_predictor = StockPricePredictor(ml_data)
+    stock_predictor = StockPricePredictor(assembled_data, config=session_handler.config)
     X_train, X_test, y_train, y_test = stock_predictor.split_data()
 
-    # Extract the last 10 data points for prediction (sample_data)
-    sample_data = get_last_10_data_points(ml_data)
+    if session_handler.config.get('demark', False):
+        assembled_data = stock_predictor.add_demarker_indicators()
 
-    # Train and predict using Random Forest
-    await stock_predictor.train_random_forest(X_train, y_train)
-    predicted_rf = stock_predictor.predict_random_forest(sample_data)
+    await stock_predictor.train_random_forest(X_train, y_train, X_test, y_test)
+    predicted_rf = stock_predictor.predict_random_forest(X_test)
 
-    # Train and predict using Linear Regression
-    await stock_predictor.train_linear_regression(X_train, y_train)
-    predicted_lr = stock_predictor.predict_linear_regression(sample_data)
+    await stock_predictor.train_linear_regression(X_train, y_train, X_test, y_test)
+    predicted_lr = stock_predictor.predict_linear_regression(X_test)
+    
+    await stock_predictor.train_xgboost(X_train, y_train, X_test, y_test)
+    predicted_xgb = stock_predictor.predict_xgboost(X_test)
 
     response = {
         "predicted_close_rf": get_closing_summary(numpy_to_list(predicted_rf)),
         "predicted_close_lr": get_closing_summary(numpy_to_list(predicted_lr)),
-        "demark_data": panda_to_json(assembled_data.tail(100))
+        "predicted_xgb": get_closing_summary(numpy_to_list(predicted_xgb)),
+        "demark_data": panda_to_json(assembled_data.tail(100)) if session_handler.config.get("demark", False) else []
     }
 
     return ResponseModel(**response)

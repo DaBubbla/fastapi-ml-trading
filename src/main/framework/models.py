@@ -1,27 +1,12 @@
 from pydantic import (
     BaseModel, Field, validator
 )
-from typing import List
+from typing import List, Optional
 from datetime import datetime, timedelta
 
 
 class QueryParams(BaseModel):
     symbol: str
-    start_date: str = None
-
-    @property
-    def calculate_end_date(self):
-        """
-        Calculate the end_date as start_date plus 9 additional cycles
-        (10 total cycles)
-        """
-        if not self.start_date:
-            return datetime.today().strftime("%Y-%m-%d")
-
-        start_date = datetime.strptime(self.start_date, "%Y-%m-%d")
-        # * cycle_duration) # Adjust cycle duration as needed
-        end_date = start_date + timedelta(days=10)
-        return end_date.strftime("%Y-%m-%d")
 
     @validator("symbol", pre=True, always=True)
     def uppercase_symbol(cls, value):
@@ -35,21 +20,24 @@ class RequestModel(BaseModel):
 
 
 class DemarkData(BaseModel):
-    timestamp: str
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: int
-    setup: float
-    countdown: float
+    timestamp: str = None
+    open: float = None
+    high: float = None
+    low: float = None
+    close: float = None
+    volume: int = None
+    setup: float = None
+    countdown: float = None
 
 class PredicteCloseSummary(BaseModel):
     min_close: float = 0.0
     mean_close: float = 0.0
     max_close: float = 0.0
+    mean_squared_error: float = 0.0
+    r_squared: float = 0.0
 
 class ResponseModel(BaseModel):
     predicted_close_rf: PredicteCloseSummary = None
     predicted_close_lr: PredicteCloseSummary = None
+    predicted_xgb: PredicteCloseSummary = None
     demark_data: List[DemarkData] = []

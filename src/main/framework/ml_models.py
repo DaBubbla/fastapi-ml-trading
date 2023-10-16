@@ -8,39 +8,65 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import LinearRegression
+import xgboost as xgb
+from pandas.api.types import CategoricalDtype
+
 
 
 class StockPricePredictor:
-    def __init__(self, data):
+    def __init__(self, data, config={}):
         """
         Initialize the StockPricePredictor.
 
         Args:
-            data (DataFrame): DataFrame containing columns like "open," "high," "low," "close," "volume," and DeMark indicators.
+            data (DataFrame): DataFrame containing columns like 
+            "open," "high," "low," "close," "volume," and DeMark indicators.
         """
         self.data = data
-        # Include DeMark indicators along with other features
-        self.features = data[["open", "high", "low", "volume", "setup", "countdown"]]  
+        self.config = config
+
+        if self.config.get('demark', False):
+            self.feature_names = ["open", "high",
+                                  "low", "volume", "setup", "countdown"]
+        else:
+            self.feature_names = ["open", "high", "low", "volume"]
+
+        
+        self.features = data[self.feature_names]
         self.target = data["close"]  # Target variable
+    
+    # def get_categorical_columns(self):
+    #     categorical_columns = self.features # Update with your actual categorical column names
+    #     data = pd.get_dummies(self.data, columns=categorical_columns)
+        
+    #     categorical_columns = [self.feature_names]
+    #     for column in categorical_columns:
+    #         self.data[column] = self.data[column].astype(CategoricalDtype())
+
 
     def add_demarker_indicators(self):
         self.data['setup'] = 0
         self.data['countdown'] = 0
 
-        for i in range(1, len(self.data)):
-            if np.isnan(self.data['high'].iloc[i]) or np.isnan(self.data['low'].iloc[i]):
+        data = self.data.copy()  # Create a copy of the DataFrame
+        for i in range(1, len(data)):
+            if np.isnan(data['high'].iloc[i]) or np.isnan(data['low'].iloc[i]):
                 continue
 
-            if self.data['high'].iloc[i] < self.data['high'].iloc[i - 1]:
-                self.data['setup'].iloc[i] = max(self.data['high'].iloc[i - 1] - self.data['low'].iloc[i], 0)
+            if data['high'].iloc[i] < data['high'].iloc[i - 1]:
+                data['setup'].iloc[i] = max(
+                    data['high'].iloc[i - 1] - data['low'].iloc[i], 0)
             else:
-                self.data['setup'].iloc[i] = 0
+                data['setup'].iloc[i] = 0
 
-            if self.data['low'].iloc[i] > self.data['low'].iloc[i - 1]:
-                self.data['countdown'].iloc[i] = max(self.data['high'].iloc[i - 1] - self.data['low'].iloc[i], 0)
+            if data['low'].iloc[i] > data['low'].iloc[i - 1]:
+                data['countdown'].iloc[i] = max(
+                    data['high'].iloc[i - 1] - data['low'].iloc[i], 0)
             else:
-                self.data['countdown'].iloc[i] = 0
+                data['countdown'].iloc[i] = 0
 
+        self.data = data  
+        
     def split_data(self, test_size=0.2, random_state=42):
         """
         Split data into training and testing sets.
@@ -52,15 +78,18 @@ class StockPricePredictor:
         Returns:
             Tuple: X_train, X_test, y_train, y_test
         """
-        X_train, X_test, y_train, y_test = train_test_split(self.features, self.target, test_size=test_size, random_state=random_state)
+        X_train, X_test, y_train, y_test = train_test_split(
+            self.features, self.target, test_size=test_size, random_state=random_state
+        )
         return X_train, X_test, y_train, y_test
 
-    async def train_model(self, model, X_train, y_train, n_estimators=None, random_state=None):
-
+    async def train_and_evaluate_model(self, model, X_train, y_train, X_test, y_test, n_estimators=None, random_state=None):
         if n_estimators is not None and isinstance(model, RandomForestRegressor):
             model.set_params(n_estimators=n_estimators, random_state=random_state)
 
         await asyncio.to_thread(model.fit, X_train, y_train)
+        metrics = self.evaluate_model(model, X_test, y_test)
+        return metrics
 
     def evaluate_model(self, model, X_test, y_test):
         """
@@ -74,65 +103,43 @@ class StockPricePredictor:
         Returns:
             dict: Dictionary containing evaluation metrics.
         """
-        # Make predictions
         y_pred = model.predict(X_test)
 
-        # Calculate evaluation metrics
         mse = mean_squared_error(y_test, y_pred)
         r2 = r2_score(y_test, y_pred)
 
         return {
             "mean_squared_error": mse,
-            "r-squared": r2
+            "r_squared": r2
         }
-    
-    def predict_model(self, model, sample_data):
-        x_new = sample_data[["open", "high", "low", "volume", "setup", "countdown"]].values
-        return model.predict(x_new)
 
-    async def train_random_forest(self, X_train, y_train, n_estimators=100, random_state=42):
+
+    # Train models
+    async def train_random_forest(self, X_train, y_train, X_test, y_test, n_estimators=100, random_state=42):
         self.rf_model = RandomForestRegressor()
-        await self.train_model(self.rf_model, X_train, y_train, n_estimators, random_state)
+        metrics = await self.train_and_evaluate_model(self.rf_model, X_train, y_train, X_test, y_test, n_estimators, random_state)
+        return metrics
 
-    def predict_random_forest(self, sample_data):
-        return self.predict_model(self.rf_model, sample_data)
-
-    async def train_linear_regression(self, X_train, y_train):
+    async def train_linear_regression(self, X_train, y_train, X_test, y_test):
         self.lr_model = LinearRegression()
-        await self.train_model(self.lr_model, X_train, y_train)
+        metrics = await self.train_and_evaluate_model(self.lr_model, X_train, y_train, X_test, y_test)
+        return metrics
+
+    async def train_xgboost(self, X_train, y_train, X_test, y_test, n_estimators=100, learning_rate=0.1, max_depth=3):
+        # self.get_categorical_columns()
+        self.xgb_model = xgb.XGBRegressor(n_estimators=n_estimators, learning_rate=learning_rate, max_depth=max_depth)
+        metrics = await self.train_and_evaluate_model(self.xgb_model, X_train, y_train, X_test, y_test)
+        return metrics
+
+    # Predict Models
+    def predict_random_forest(self, sample_data):
+        x_new = sample_data[self.feature_names].values
+        return self.rf_model.predict(x_new)
 
     def predict_linear_regression(self, sample_data):
-        return self.predict_model(self.lr_model, sample_data)
-    
-    # async def train_model(self, X_train, y_train, n_estimators=100, random_state=42):
-    #     """
-    #     Train a RandomForestRegressor model.
+        x_new = sample_data[self.feature_names].values
+        return self.lr_model.predict(x_new)
 
-    #     Args:
-    #         X_train (array-like): Training feature matrix.
-    #         y_train (array-like): Target variable for training.
-    #         n_estimators (int, optional): Number of trees in the forest. Default is 100.
-    #         random_state (int, optional): Random seed for reproducibility. Default is 42.
-
-    #     Returns:
-    #         RandomForestRegressor: The trained RandomForestRegressor model.
-    #     """
-    #     model = RandomForestRegressor(n_estimators=n_estimators, random_state=random_state)
-    #     model.fit(X_train, y_train)
-    #     return model
-    
-    # def predict(self, model, sample_data):
-    #     """
-    #     Make predictions using the trained model.
-
-    #     Args:
-    #         model (RandomForestRegressor): The trained RandomForestRegressor model.
-    #         sample_data (DataFrame): DataFrame containing a single data point for prediction, including DeMark indicators.
-
-    #     Returns:
-    #         float: Predicted close price.
-    #     """
-    #     # Include DeMark indicators in the prediction
-    #     x_new = sample_data[["open", "high", "low", "volume", "setup", "countdown"]].values
-    #     predicted_close_price = model.predict(x_new)
-    #     return predicted_close_price
+    def predict_xgboost(self, sample_data):
+        x_new = sample_data[self.feature_names].values
+        return self.xgb_model.predict(x_new)
